@@ -1,0 +1,188 @@
+# Employee Management System
+
+A REST API built with Java 17 + Spring Boot 3 for managing **employees** and **departments**.
+This is the submission for the Software Engineer (Java) hands-on coding round.
+
+## Highlights
+
+- **10 endpoints** covering create / update / delete / move / list / lookup / expand / analytics / reporting chains
+- **Paginated** list endpoints by default (20 items per page) with page metadata in the response
+- **H2 embedded database** (zero setup) with a portable `schema.sql` + seeded `data.sql`
+- **Business rules enforced**: department deletion fails if employees are assigned (409), exactly one top-level employee, no circular reporting chains, unique department names
+- **N+1-free** reads: entity graphs, batch IN-clause fetches and single GROUP BY aggregates
+- **28 automated tests** (MockMvc integration tests + Mockito unit tests)
+- **Uniform error handling** via `@RestControllerAdvice` (404 / 400 / 409 / 500 with a consistent JSON body)
+
+## Tech stack
+
+| Concern        | Choice                                  |
+|----------------|-----------------------------------------|
+| Language       | Java 17                                  |
+| Framework      | Spring Boot 3.5, Spring MVC              |
+| Persistence    | Spring Data JPA (Hibernate 6)            |
+| Database       | H2 (file mode, embedded — zero install)  |
+| Validation     | Jakarta Bean Validation                  |
+| Build          | Maven                                    |
+| Tests          | JUnit 5, MockMvc, Mockito                |
+
+> Why H2? It is embedded and requires no setup, which makes the demo/review trivially
+> reproducible. The JPA layer and the DDL script in `schema.sql` are standard SQL and
+> port to MySQL/PostgreSQL unchanged — in production I would replace H2 with MySQL and
+> migrate `schema.sql` into Flyway.
+
+## Prerequisites
+
+- JDK 17+
+- Maven 3.8+
+
+## Run
+
+```bash
+mvn spring-boot:run
+```
+
+The application starts on `http://localhost:8080`. Data is stored in `./data/emsdb`
+and survives restarts. On the first start the tables are created from `schema.sql`
+and seeded from `data.sql` (3 departments, 25 employees).
+
+- H2 web console: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:file:./data/emsdb`, user `sa`, empty password)
+
+## Tests
+
+```bash
+mvn test
+```
+
+Integration tests run against an in-memory H2 seeded with the same scripts.
+
+## API overview
+
+Base URL: `http://localhost:8080`
+
+### Employees
+
+| Method | Path                                          | Description                                                      |
+|--------|-----------------------------------------------|------------------------------------------------------------------|
+| POST   | `/api/employees`                              | Create an employee (201)                                         |
+| PUT    | `/api/employees/{id}`                         | Fully update an employee                                         |
+| PATCH  | `/api/employees/{id}/department/{departmentId}` | Move an employee to another department                        |
+| GET    | `/api/employees?page=0&size=20`               | List employees (paginated)                                       |
+| GET    | `/api/employees?lookup=true`                  | List employee **id + name only** (still paginated)               |
+| GET    | `/api/employees/{id}`                         | Fetch one employee                                               |
+| GET    | `/api/employees/{id}/reporting-chain`         | Employee → manager → … → top-level employee chain               |
+
+### Departments
+
+| Method | Path                                             | Description                                            |
+|--------|--------------------------------------------------|--------------------------------------------------------|
+| POST   | `/api/departments`                               | Create a department (201)                              |
+| PUT    | `/api/departments/{id}`                          | Update name / department head                          |
+| DELETE | `/api/departments/{id}`                          | Delete — **409 if employees are still assigned**       |
+| GET    | `/api/departments?page=0&size=20`                | List departments (paginated, with employee counts)     |
+| GET    | `/api/departments?expand=employee`               | List departments **including their employees**         |
+| GET    | `/api/departments/{id}?expand=employee`          | Fetch one department (optionally expanded)             |
+
+### Analytics
+
+| Method | Path                         | Description                                              |
+|--------|------------------------------|----------------------------------------------------------|
+| GET    | `/api/analytics/departments` | Per-department headcount, average salary, total salary, total yearly bonus (paginated) |
+
+### Pagination
+
+All list endpoints are paginated by default with `size=20`. The response envelope:
+
+```json
+{
+  "content": [ ... ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 25,
+  "totalPages": 2,
+  "first": true,
+  "last": false
+}
+```
+
+### Errors
+
+Every failure returns a uniform body via `GlobalExceptionHandler`:
+
+```json
+{
+  "timestamp": "2026-08-18T21:26:04.617",
+  "status": 409,
+  "error": "Conflict",
+  "message": "Cannot delete department 'Engineering' (id 1): 11 employee(s) are still assigned; move them first",
+  "path": "/api/departments/1",
+  "fieldErrors": null
+}
+```
+
+| Status | When                                            |
+|--------|-------------------------------------------------|
+| 400    | Validation failure (with `fieldErrors`) or malformed body |
+| 404    | Employee / department / manager not found       |
+| 409    | Business-rule conflict (delete non-empty department, duplicate name, circular chain, second top-level employee) |
+| 500    | Unexpected error (details logged server-side)   |
+
+## Project structure
+
+```
+src/main/java/com/retailcloud/ems/
+├── controller/        # REST endpoints (thin, delegate to services)
+├── service/           # Business logic + transactions
+├── repository/        # Spring Data JPA repositories + projections
+├── entity/            # JPA entities (Employee, Department)
+├── dto/               # Request/response records
+├── exception/         # Domain exceptions
+└── common/            # PageResponse envelope, ApiError, GlobalExceptionHandler
+src/main/resources/
+├── schema.sql         # DB script to create tables (deliverable)
+├── data.sql           # Seed data: 3 departments, 25 employees
+└── application.properties
+docs/
+└── json-schemas.md    # Request/response JSON schemas (deliverable)
+```
+
+## Design decisions (interview talking points)
+
+1. **Controller → Service → Repository**: the service layer owns business rules and
+   transactions; controllers only map HTTP to DTOs. No business logic leaks into controllers.
+
+2. **PUT vs PATCH**: employee updates use PUT (the whole record is replaced — a "save").
+   Moving an employee to another department is PATCH because it changes exactly one field.
+   `DELETE /api/departments/{id}` returns **409** (not 400) when employees are assigned —
+   the request is valid, the state of the resource makes it impossible.
+
+3. **`lookup=true` and `expand=employee`**: one endpoint, one documented query parameter.
+   `lookup=true` selects only `id` and `name` (interface projection) so the payload stays
+   tiny; `expand=employee` batch-fetches employees for the whole page in one `IN` query
+   instead of one query per department (no N+1).
+
+4. **Cyclic foreign keys**: `employee.department_id` and `department.department_head_id`
+   reference each other. The head column is nullable and linked after the employee exists,
+   so inserts never violate FK ordering. The same trick works in MySQL/PostgreSQL.
+
+5. **Reporting chain**: walks `reportingManager` references with a `HashSet` guard that
+   raises 409 on circular data instead of looping forever — the "collections + conditionals"
+   part of the assessment.
+
+6. **Analytics**: one JPQL `GROUP BY` query computes headcount / average salary / total
+   salary / total yearly bonus for all departments — the database aggregates, the app does
+   not iterate over employees.
+
+7. **N+1 awareness**: `@EntityGraph` on employee page queries, `IN`-clause batch fetch for
+   expanded departments, one GROUP BY for employee counts, one JPQL projection for lookup.
+
+## Deliverables checklist
+
+- [x] JSON schemas for all APIs — `docs/json-schemas.md`
+- [x] Database structure — `src/main/resources/schema.sql`
+- [x] POST / PUT / PATCH / DELETE / GET APIs with error handling — `controller/` + `common/GlobalExceptionHandler.java`
+- [x] Complex logic: analytics + reporting chains — `service/`
+- [x] JPA entities — `entity/`
+- [x] Seed data: 3 departments, 25 employees — `data.sql`
+- [x] Pagination (default 20, page + totalPages in response)
+- [x] Tests — 28 integration + unit tests
+- [x] Git repository
