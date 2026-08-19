@@ -1,19 +1,24 @@
 -- =====================================================================
 -- Seed data for PostgreSQL (same employees/departments as data.sql).
--- The only difference from the H2 script: identity sequences are
--- advanced with ALTER SEQUENCE instead of H2's ALTER COLUMN RESTART WITH.
+-- Differences from the H2 script:
+--   * INSERT ... ON CONFLICT (id) DO NOTHING makes this script
+--     idempotent (safe to run on every application start)
+--   * identity sequences are advanced with ALTER SEQUENCE instead of
+--     H2's ALTER COLUMN RESTART WITH
 -- =====================================================================
 
 INSERT INTO department (id, name, creation_date) VALUES
     (1, 'Engineering',        '2020-04-01'),
     (2, 'Sales',              '2020-06-15'),
-    (3, 'Human Resources',    '2020-08-01');
+    (3, 'Human Resources',    '2020-08-01')
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
     (1,  'Aarav Sharma',       '1980-05-14', 4500000.00, 1, 'Mumbai, Maharashtra',        'Chief Executive Officer',     '2019-01-15', 20.00, NULL),
     (2,  'Priya Nair',         '1986-02-21', 2400000.00, 1, 'Bengaluru, Karnataka',       'Engineering Manager',         '2020-04-01', 15.00, 1),
     (3,  'Rohan Mehta',        '1985-11-03', 2200000.00, 2, 'Mumbai, Maharashtra',        'Sales Manager',               '2020-06-15', 15.00, 1),
-    (4,  'Ananya Iyer',        '1988-07-19', 1900000.00, 3, 'Pune, Maharashtra',          'HR Manager',                  '2020-08-01', 15.00, 1);
+    (4,  'Ananya Iyer',        '1988-07-19', 1900000.00, 3, 'Pune, Maharashtra',          'HR Manager',                  '2020-08-01', 15.00, 1)
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
     (5,  'Vikram Reddy',       '1992-03-11', 1800000.00, 1, 'Bengaluru, Karnataka',       'Senior Software Engineer',    '2021-01-11', 12.00, 2),
@@ -22,7 +27,8 @@ INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, r
     (8,  'Divya Krishnan',     '1997-06-09', 1150000.00, 1, 'Chennai, Tamil Nadu',        'Software Engineer',           '2022-05-02', 10.00, 2),
     (9,  'Karthik Rao',        '1998-11-30', 1000000.00, 1, 'Hyderabad, Telangana',       'Software Engineer',           '2023-01-09', 8.00,  2),
     (10, 'Meera Pillai',       '1995-04-12', 950000.00,  1, 'Thiruvananthapuram, Kerala', 'QA Engineer',                 '2022-07-18', 8.00,  2),
-    (11, 'Nikhil Joshi',       '1999-09-05', 850000.00,  1, 'Indore, Madhya Pradesh',     'QA Engineer',                 '2023-06-12', 8.00,  2);
+    (11, 'Nikhil Joshi',       '1999-09-05', 850000.00,  1, 'Indore, Madhya Pradesh',     'QA Engineer',                 '2023-06-12', 8.00,  2)
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
     (12, 'Sanya Kapoor',       '1991-12-08', 1500000.00, 2, 'Delhi',                      'Account Manager',             '2021-04-19', 12.00, 3),
@@ -31,7 +37,8 @@ INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, r
     (15, 'Rahul Verma',        '1997-05-28', 900000.00,  2, 'Noida, Uttar Pradesh',       'Sales Executive',             '2022-09-26', 10.00, 3),
     (16, 'Tanvi Shah',         '1998-10-16', 850000.00,  2, 'Ahmedabad, Gujarat',         'Sales Executive',             '2023-02-20', 8.00,  3),
     (17, 'Yash Agarwal',       '1999-03-03', 800000.00,  2, 'Jaipur, Rajasthan',          'Sales Executive',             '2023-07-17', 8.00,  3),
-    (18, 'Pooja Bhatt',        '1994-01-22', 1050000.00, 2, 'Mumbai, Maharashtra',        'Sales Operations Analyst',    '2022-01-10', 10.00, 3);
+    (18, 'Pooja Bhatt',        '1994-01-22', 1050000.00, 2, 'Mumbai, Maharashtra',        'Sales Operations Analyst',    '2022-01-10', 10.00, 3)
+ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
     (19, 'Ritika Saxena',      '1993-09-09', 1100000.00, 3, 'Bengaluru, Karnataka',       'Senior HR Executive',         '2021-05-03', 10.00, 4),
@@ -40,7 +47,8 @@ INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, r
     (22, 'Suresh Nair',        '1996-08-12', 880000.00,  3, 'Kochi, Kerala',              'Recruiter',                   '2022-11-21', 8.00,  4),
     (23, 'Kavya Rao',          '1998-04-04', 820000.00,  3, 'Hyderabad, Telangana',       'Recruiter',                   '2023-03-13', 8.00,  4),
     (24, 'Deepak Chauhan',     '1992-12-19', 980000.00,  3, 'Chandigarh',                 'Payroll Specialist',          '2021-09-06', 10.00, 4),
-    (25, 'Shreya Das',         '1999-07-08', 780000.00,  3, 'Kolkata, West Bengal',       'Training Coordinator',        '2023-08-28', 8.00,  4);
+    (25, 'Shreya Das',         '1999-07-08', 780000.00,  3, 'Kolkata, West Bengal',       'Training Coordinator',        '2023-08-28', 8.00,  4)
+ON CONFLICT (id) DO NOTHING;
 
 UPDATE department SET department_head_id = 2 WHERE id = 1;
 UPDATE department SET department_head_id = 3 WHERE id = 2;

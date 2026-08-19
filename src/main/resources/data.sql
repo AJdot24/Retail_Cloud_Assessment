@@ -1,5 +1,5 @@
 -- =====================================================================
--- Employee Management System - Seed data
+-- Employee Management System - Seed data (H2)
 -- =====================================================================
 -- 3 departments and 25 employees forming a realistic reporting hierarchy:
 --
@@ -11,24 +11,28 @@
 --   └── Ananya Iyer    (HR Manager, head of Human Resources)
 --       └── 7 HR people
 --
+-- This script is IDEMPOTENT: MERGE INTO updates rows that already exist
+-- instead of inserting duplicates, so it can safely run on every
+-- application start against an existing database.
+--
 -- Order matters: departments first, then employees (their department FK
 -- requires departments to exist), then the department heads are linked
 -- via UPDATE once all employees exist.
 
-INSERT INTO department (id, name, creation_date) VALUES
+MERGE INTO department (id, name, creation_date) KEY (id) VALUES
     (1, 'Engineering',        '2020-04-01'),
     (2, 'Sales',              '2020-06-15'),
     (3, 'Human Resources',    '2020-08-01');
 
 -- id 1: top-level employee (reporting_manager_id = NULL)
-INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
+MERGE INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) KEY (id) VALUES
     (1,  'Aarav Sharma',       '1980-05-14', 4500000.00, 1, 'Mumbai, Maharashtra',        'Chief Executive Officer',     '2019-01-15', 20.00, NULL),
     (2,  'Priya Nair',         '1986-02-21', 2400000.00, 1, 'Bengaluru, Karnataka',       'Engineering Manager',         '2020-04-01', 15.00, 1),
     (3,  'Rohan Mehta',        '1985-11-03', 2200000.00, 2, 'Mumbai, Maharashtra',        'Sales Manager',               '2020-06-15', 15.00, 1),
     (4,  'Ananya Iyer',        '1988-07-19', 1900000.00, 3, 'Pune, Maharashtra',          'HR Manager',                  '2020-08-01', 15.00, 1);
 
 -- Engineering (reports to id 2)
-INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
+MERGE INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) KEY (id) VALUES
     (5,  'Vikram Reddy',       '1992-03-11', 1800000.00, 1, 'Bengaluru, Karnataka',       'Senior Software Engineer',    '2021-01-11', 12.00, 2),
     (6,  'Sneha Kulkarni',     '1993-08-25', 1600000.00, 1, 'Pune, Maharashtra',          'Senior Software Engineer',    '2021-03-22', 12.00, 2),
     (7,  'Arjun Menon',        '1996-01-17', 1200000.00, 1, 'Kochi, Kerala',              'Software Engineer',           '2022-02-14', 10.00, 2),
@@ -38,7 +42,7 @@ INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, r
     (11, 'Nikhil Joshi',       '1999-09-05', 850000.00,  1, 'Indore, Madhya Pradesh',     'QA Engineer',                 '2023-06-12', 8.00,  2);
 
 -- Sales (reports to id 3)
-INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
+MERGE INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) KEY (id) VALUES
     (12, 'Sanya Kapoor',       '1991-12-08', 1500000.00, 2, 'Delhi',                      'Account Manager',             '2021-04-19', 12.00, 3),
     (13, 'Aditya Deshmukh',    '1992-07-23', 1350000.00, 2, 'Pune, Maharashtra',          'Account Manager',             '2021-08-02', 12.00, 3),
     (14, 'Isha Malhotra',      '1996-02-14', 950000.00,  2, 'Gurugram, Haryana',          'Sales Executive',             '2022-03-07', 10.00, 3),
@@ -48,16 +52,16 @@ INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, r
     (18, 'Pooja Bhatt',        '1994-01-22', 1050000.00, 2, 'Mumbai, Maharashtra',        'Sales Operations Analyst',    '2022-01-10', 10.00, 3);
 
 -- Human Resources (reports to id 4)
-INSERT INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) VALUES
+MERGE INTO employee (id, name, date_of_birth, salary, department_id, address, role_title, joining_date, yearly_bonus_percentage, reporting_manager_id) KEY (id) VALUES
     (19, 'Ritika Saxena',      '1993-09-09', 1100000.00, 3, 'Bengaluru, Karnataka',       'Senior HR Executive',         '2021-05-03', 10.00, 4),
     (20, 'Manish Tiwari',      '1995-06-27', 950000.00,  3, 'Lucknow, Uttar Pradesh',     'HR Executive',                '2022-04-25', 8.00,  4),
     (21, 'Neha Gupta',         '1997-01-30', 900000.00,  3, 'Delhi',                      'HR Executive',                '2022-10-17', 8.00,  4),
     (22, 'Suresh Nair',        '1996-08-12', 880000.00,  3, 'Kochi, Kerala',              'Recruiter',                   '2022-11-21', 8.00,  4),
-    (23, 'Kavya Rao',          '1998-04-04', 820000.00,  3, 'Hyderabad, Telangala',       'Recruiter',                   '2023-03-13', 8.00,  4),
+    (23, 'Kavya Rao',          '1998-04-04', 820000.00,  3, 'Hyderabad, Telangana',       'Recruiter',                   '2023-03-13', 8.00,  4),
     (24, 'Deepak Chauhan',     '1992-12-19', 980000.00,  3, 'Chandigarh',                 'Payroll Specialist',          '2021-09-06', 10.00, 4),
     (25, 'Shreya Das',         '1999-07-08', 780000.00,  3, 'Kolkata, West Bengal',       'Training Coordinator',        '2023-08-28', 8.00,  4);
 
--- Link department heads now that all employees exist
+-- Link department heads now that all employees exist (safe to re-run)
 UPDATE department SET department_head_id = 2 WHERE id = 1;
 UPDATE department SET department_head_id = 3 WHERE id = 2;
 UPDATE department SET department_head_id = 4 WHERE id = 3;

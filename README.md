@@ -43,8 +43,10 @@ mvn spring-boot:run
 ```
 
 The application starts on `http://localhost:8080`. Data is stored in `./data/emsdb`
-and survives restarts. On the first start the tables are created from `schema.sql`
-and seeded from `data.sql` (3 departments, 25 employees).
+and survives restarts. On every start the tables are created from `schema.sql` and
+seeded from `data.sql` (3 departments, 25 employees); both scripts are **idempotent**
+(`MERGE INTO` / `IF NOT EXISTS`), so stopping and restarting the application never
+causes script errors.
 
 - H2 web console: `http://localhost:8080/h2-console` (JDBC URL `jdbc:h2:file:./data/emsdb`, user `sa`, empty password)
 

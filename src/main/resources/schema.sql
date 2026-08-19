@@ -33,7 +33,9 @@ CREATE TABLE IF NOT EXISTS employee (
 
 -- The department head foreign key is added after the employee table exists
 -- because department.department_head_id and employee.department_id reference
--- each other (cyclic dependency).
+-- each other (cyclic dependency). DROP ... IF EXISTS makes this script
+-- idempotent, so it can run on every application start.
+ALTER TABLE department DROP CONSTRAINT IF EXISTS fk_department_head;
 ALTER TABLE department
     ADD CONSTRAINT fk_department_head
     FOREIGN KEY (department_head_id) REFERENCES employee (id);
